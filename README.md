@@ -16,6 +16,14 @@ click on Create Repl
 
 Import from github link https://github.com/deepset/tweether
 
+## Complexity
+ 
+O(n*m)
+
+n is the total number of elements in the JSON
+
+m is the average length of each string field
+
 
 
 
