@@ -26,18 +26,12 @@ func ParseTime(s string) (int64, error) {
 		return 0, ErrInvalidTime
 	}
 	// Unix returns t as a Unix time,
-	// the number of seconds elapsed since January 1, 1970 UTC.
-	// fmt.Println(t.Unix())
 	return t.Unix(), nil
 
 }
 
+// Parsing the map key
 func ParseKey(s string) (string, error) {
-
-	// Must sanitize the keys of trailing and leading whitespace before processing.
-	// Must represent keys with String data type.
-	// Must omit fields with empty keys.
-	// Must omit all invalid fields.
 
 	newString := strings.TrimSpace(s)
 	if len(newString) == 0 {
@@ -46,6 +40,7 @@ func ParseKey(s string) (string, error) {
 	return newString, nil
 }
 
+// Parsing the string type
 func ParseString(s string) (interface{}, error) {
 
 	//Remove empty space from front and back of string
@@ -62,6 +57,7 @@ func ParseString(s string) (interface{}, error) {
 	return newString, nil
 }
 
+// Parsing the number type
 func ParseNumber(s string) (interface{}, error) {
 
 	//Remove empty space from front and back of string
@@ -80,16 +76,11 @@ func ParseNumber(s string) (interface{}, error) {
 	if num, err := strconv.ParseFloat(newString, 64); err == nil {
 		return num, nil
 	}
-
-	// It stores any Numeric value (positive, negative, int, float, etc.)
-	// Transformation criteria.
-	// Must be transformed to the relevant Numeric data type.
-	// Must sanitize the value of trailing and leading whitespace before processing.
-	// Must strip the leading zeros.
-	// Must omit fields with invalid Numeric values.
 	return -1, nil
 
 }
+
+// Parsing the Boolean type
 func ParseBoolean(s string) (interface{}, error) {
 
 	//Remove empty space from front and back of string
@@ -104,14 +95,11 @@ func ParseBoolean(s string) (interface{}, error) {
 
 }
 
+// Parsing the List type
 func ParseList(l []interface{}) []interface{} {
 
 	innerList := make([]interface{}, 0)
-
 	for _, inner := range l {
-		// fmt.Printf("%v %T %v \n", mapKey, inner, inner)
-
-		//fmt.Println(inner.(map[string]interface{}))
 		for typeKey, value := range inner.(map[string]interface{}) {
 
 			typeKey, err := ParseKey(typeKey)
@@ -144,67 +132,21 @@ func ParseList(l []interface{}) []interface{} {
 				}
 			}
 		}
-
-		/*if value, found := inner.(map[string]interface{})["S"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseString(value.(string))
-			if err == nil {
-				innerList = append(innerList, newValue)
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["N"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseNumber(value.(string))
-			if err == nil {
-				innerList = append(innerList, newValue)
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["BOOL"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseBoolean(value.(string))
-			if err == nil {
-				innerList = append(innerList, newValue)
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["NULL"]; found {
-			//fmt.Println(value)
-
-			newValue, err := ParseBoolean(value.(string))
-			if err == nil && newValue.(bool) {
-				innerList = append(innerList, newValue)
-			}
-			continue
-		}*/
 	}
 
-	// fmt.Println(innerList)
 	return innerList
 }
 
+// Parsing the Map type
 func ParseMap(m map[string]interface{}) map[string]interface{} {
 
 	innerMap := make(map[string]interface{}, 0)
-
-	// fmt.Println()
-	// fmt.Println()
-	// fmt.Println("Here::::", m)
-
 	for mapKey, inner := range m {
-
-		// fmt.Printf("%v %T %v \n", mapKey, inner, inner)
-		// fmt.Println(inner.(map[string]interface{}))
-
 		mapKey, err := ParseKey(mapKey)
 		if err != nil {
 			logger.ErrorLogger.Printf("Invalid map key %q ", mapKey)
 			continue
 		}
-
-		// How to parse type key from the map
-		// Removing white space from type key
 
 		for typeKey, value := range inner.(map[string]interface{}) {
 
@@ -244,49 +186,14 @@ func ParseMap(m map[string]interface{}) map[string]interface{} {
 				}
 
 			case "M":
+				// Recursively calling the ParseMap
 				newMap := ParseMap(value.(map[string]interface{}))
 				if len(newMap) != 0 {
 					innerMap[mapKey] = newMap
 				}
 			}
 		}
-
-		/*if value, found := inner.(map[string]interface{})["S"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseString(value.(string))
-			if err == nil {
-				innerMap[key] = newValue
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["N"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseNumber(value.(string))
-			if err == nil {
-				innerMap[key] = newValue
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["BOOL"]; found {
-			//fmt.Println(value)
-			newValue, err := ParseBoolean(value.(string))
-			if err == nil {
-				innerMap[key] = newValue
-			}
-			continue
-		}
-		if value, found := inner.(map[string]interface{})["NULL"]; found {
-			//fmt.Println(value)
-
-			newValue, err := ParseBoolean(value.(string))
-
-			if err == nil && newValue.(bool) {
-				innerMap[key] = newValue
-			}
-			continue
-		}*/
 	}
 
-	// fmt.Println(innerMap)
 	return innerMap
 }

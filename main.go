@@ -21,37 +21,23 @@ func main() {
 
 	// Open our jsonFile
 	jsonFile, err := os.Open("json/input.json")
-	// if we os.Open returns an error then handle it
 	if err != nil {
 		logger.ErrorLogger.Fatalln("Error opening the file...")
 	}
-	//fmt.Println("Successfully Opened users.json")
-	// defer the closing of our jsonFile so that we can parse it later on
 	defer jsonFile.Close()
 
-	//fmt.Println(jsonFile)
-
-	// byteValue, err := ioutil.ReadAll(jsonFile)
-	// if err != nil {
-	// 	fmt.Println("Error of ReadAll :", err)
-	// }
-
-	//var result map[string]interface{}
-	//err = json.Unmarshal([]byte(byteValue), &result)
-
+	// Reading the input data to InputMap{}
 	input := InputMap{}
-	//input := map[string]map[string]interface{}{}
 	err = json.NewDecoder(jsonFile).Decode(&input.inputDataMap)
 	if err != nil {
 		log.Fatalf("File reading error %v", err)
 	}
 
+	// Reading the output data in OutputMap{}
 	output := OutputMap{}
 	output.outputDataMap = make(map[string]interface{})
 
 	for key, inner := range input.inputDataMap {
-		//fmt.Printf("%s : %v \n", key, inner)
-
 		mapKey, err := utils.ParseKey(key)
 		if err != nil {
 			logger.ErrorLogger.Printf("Invalid map key %q ", key)
@@ -59,16 +45,15 @@ func main() {
 		}
 
 		for typeKey, value := range inner {
-			//fmt.Printf("%s \n", keyType)
 
-			//fmt.Printf("key , type , value : (%s) : (%T) : %+v \n", key, value, value)
-
-			//Removing white space from type key
+			// parsing and validating the map key
 			typeKey, err = utils.ParseKey(typeKey)
 			if err != nil {
 				logger.ErrorLogger.Printf("Invalid Type key %q ", typeKey)
 				continue
 			}
+
+			// Parsing and validating different data types
 			switch typeKey {
 
 			case "S":
@@ -107,8 +92,6 @@ func main() {
 			}
 		}
 	}
-
-	//json.NewEncoder(os.Stdout).Encode(input)
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
