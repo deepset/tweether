@@ -57,38 +57,57 @@ func main() {
 			switch typeKey {
 
 			case "S":
+				if utils.CheckType(value) != "STRING" {
+					continue
+				}
 				newValue, err := utils.ParseString(value.(string))
 				if err == nil {
 					output.outputDataMap[mapKey] = newValue
 				}
 			case "N":
+				if utils.CheckType(value) != "STRING" {
+					continue
+				}
 				newValue, err := utils.ParseNumber(value.(string))
 				if err == nil {
 					output.outputDataMap[mapKey] = newValue
 				}
 
 			case "BOOL":
+				if utils.CheckType(value) != "STRING" {
+					continue
+				}
 				newValue, err := utils.ParseBoolean(value.(string))
 				if err == nil {
 					output.outputDataMap[mapKey] = newValue
 				}
 			case "NULL":
-				newValue, _ := utils.ParseBoolean(value.(string))
+				if utils.CheckType(value) != "STRING" {
+					continue
+				}
+				newValue, err := utils.ParseBoolean(value.(string))
 				if err == nil && newValue.(bool) {
 					output.outputDataMap[mapKey] = newValue
 				}
 
 			case "L":
-				newList := utils.ParseList(value.([]interface{}))
-				if len(newList) != 0 {
+				if utils.CheckType(value) != "LIST" {
+					continue
+				}
+				newList, err := utils.ParseList(value.([]interface{}))
+				if err == nil && len(newList) != 0 {
 					output.outputDataMap[mapKey] = newList
 				}
 
 			case "M":
-				newMap := utils.ParseMap(value.(map[string]interface{}))
-				if len(newMap) != 0 {
+				if utils.CheckType(value) != "MAP" {
+					continue
+				}
+				newMap, err := utils.ParseMap(value.(map[string]interface{}))
+				if err == nil && len(newMap) != 0 {
 					output.outputDataMap[mapKey] = newMap
 				}
+
 			}
 		}
 	}

@@ -15,9 +15,22 @@ var (
 	ErrInvalidTime    = errors.New("invalid time")
 	ErrInvalidNumber  = errors.New("invalid number")
 	ErrInvalidBoolean = errors.New("invalid Boolean")
+	ErrInvalidList    = errors.New("invalid List")
+	ErrInvalidMap     = errors.New("invalid Map")
 )
 var digitCheck = regexp.MustCompile(`^[+-]?([0-9]*[.])?[0-9]+$`)
 
+// Parsing the map key
+func ParseKey(s string) (string, error) {
+
+	newString := strings.TrimSpace(s)
+	if len(newString) == 0 {
+		return "", ErrEmptyString
+	}
+	return newString, nil
+}
+
+// Parse RFCRFC3339 format time
 func ParseTime(s string) (int64, error) {
 
 	t, err := time.Parse(time.RFC3339, s)
@@ -30,22 +43,11 @@ func ParseTime(s string) (int64, error) {
 
 }
 
-// Parsing the map key
-func ParseKey(s string) (string, error) {
-
-	newString := strings.TrimSpace(s)
-	if len(newString) == 0 {
-		return "", ErrEmptyString
-	}
-	return newString, nil
-}
-
 // Parsing the string type
 func ParseString(s string) (interface{}, error) {
 
 	//Remove empty space from front and back of string
 	newString := strings.TrimSpace(s)
-
 	if len(newString) == 0 {
 		return "", ErrEmptyString
 	}
@@ -77,7 +79,6 @@ func ParseNumber(s string) (interface{}, error) {
 		return num, nil
 	}
 	return -1, nil
-
 }
 
 // Parsing the Boolean type
@@ -96,12 +97,20 @@ func ParseBoolean(s string) (interface{}, error) {
 }
 
 // Parsing the List type
-func ParseList(l []interface{}) []interface{} {
+func ParseList(l []interface{}) ([]interface{}, error) {
 
 	innerList := make([]interface{}, 0)
 	for _, inner := range l {
+
+		if CheckType(inner) != "MAP" {
+			return innerList, ErrInvalidList
+		}
+
 		for typeKey, value := range inner.(map[string]interface{}) {
 
+			if CheckType(typeKey) != "STRING" {
+				continue
+			}
 			typeKey, err := ParseKey(typeKey)
 			if err != nil {
 				logger.ErrorLogger.Printf("Invalid Type key %q ", typeKey)
@@ -110,22 +119,34 @@ func ParseList(l []interface{}) []interface{} {
 			switch typeKey {
 
 			case "S":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseString(value.(string))
 				if err == nil {
 					innerList = append(innerList, newValue)
 				}
 			case "N":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseNumber(value.(string))
 				if err == nil {
 					innerList = append(innerList, newValue)
 				}
 
 			case "BOOL":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseBoolean(value.(string))
 				if err == nil {
 					innerList = append(innerList, newValue)
 				}
 			case "NULL":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, _ := ParseBoolean(value.(string))
 				if err == nil && newValue.(bool) {
 					innerList = append(innerList, newValue)
@@ -134,14 +155,20 @@ func ParseList(l []interface{}) []interface{} {
 		}
 	}
 
-	return innerList
+	return innerList, nil
 }
 
 // Parsing the Map type
-func ParseMap(m map[string]interface{}) map[string]interface{} {
+func ParseMap(m map[string]interface{}) (map[string]interface{}, error) {
 
 	innerMap := make(map[string]interface{}, 0)
 	for mapKey, inner := range m {
+
+		if CheckType(inner) != "MAP" {
+			return innerMap, ErrInvalidList
+		}
+
+		// Parsing Map key
 		mapKey, err := ParseKey(mapKey)
 		if err != nil {
 			logger.ErrorLogger.Printf("Invalid map key %q ", mapKey)
@@ -150,6 +177,9 @@ func ParseMap(m map[string]interface{}) map[string]interface{} {
 
 		for typeKey, value := range inner.(map[string]interface{}) {
 
+			if CheckType(typeKey) != "STRING" {
+				continue
+			}
 			typeKey, err = ParseKey(typeKey)
 			if err != nil {
 				logger.ErrorLogger.Printf("Invalid Type key %q ", typeKey)
@@ -158,42 +188,76 @@ func ParseMap(m map[string]interface{}) map[string]interface{} {
 			switch typeKey {
 
 			case "S":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseString(value.(string))
 				if err == nil {
 					innerMap[mapKey] = newValue
 				}
 			case "N":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseNumber(value.(string))
 				if err == nil {
 					innerMap[mapKey] = newValue
 				}
 
 			case "BOOL":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, err := ParseBoolean(value.(string))
 				if err == nil {
 					innerMap[mapKey] = newValue
 				}
 			case "NULL":
+				if CheckType(typeKey) != "STRING" {
+					continue
+				}
 				newValue, _ := ParseBoolean(value.(string))
 				if err == nil && newValue.(bool) {
 					innerMap[mapKey] = newValue
 				}
 
 			case "L":
-				newList := ParseList(value.([]interface{}))
-				if len(newList) != 0 {
+
+				if CheckType(value) != "LIST" {
+					continue
+				}
+				newList, err := ParseList(value.([]interface{}))
+				if err == nil && len(newList) != 0 {
 					innerMap[mapKey] = newList
 				}
-
 			case "M":
+
+				if CheckType(value) != "MAP" {
+					continue
+				}
 				// Recursively calling the ParseMap
-				newMap := ParseMap(value.(map[string]interface{}))
-				if len(newMap) != 0 {
+				newMap, err := ParseMap(value.(map[string]interface{}))
+				if err == nil && len(newMap) != 0 {
 					innerMap[mapKey] = newMap
 				}
 			}
 		}
 	}
 
-	return innerMap
+	return innerMap, nil
+}
+
+// Type assert the values
+func CheckType(i interface{}) string {
+
+	switch i.(type) {
+	case map[string]interface{}:
+		return "MAP"
+	case []interface{}:
+		return "LIST"
+	case string:
+		return "STRING"
+	default:
+		return "NONE"
+	}
 }

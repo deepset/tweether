@@ -4,10 +4,6 @@ import "testing"
 
 func TestParseTime(t *testing.T) {
 
-	// t.Logf()
-	// t.Errorf()
-	// t.Fatalf()
-	// t.FailNow()
 	str1 := "2014-07-16T20:55:46Z"
 	got1, _ := ParseTime(str1)
 
@@ -26,18 +22,4 @@ func TestParseTime(t *testing.T) {
 
 }
 
-// func TestParseKey(t *testing.T) {
-
-// }
-// func TestParseString(t *testing.T) {
-
-// }
-// func TestParseNumber(t *testing.T) {
-
-// }
-// func TestParseBoolean(t *testing.T) {
-
-// }
-// func TestParseNull(t *testing.T) {
-
-// }
+//TODO :: Test functions for other parse functions
