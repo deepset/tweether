@@ -13,8 +13,8 @@ type InputMap struct {
 	inputDataMap map[string]map[string]interface{}
 }
 
-type OutputMap struct {
-	outputDataMap map[string]interface{}
+type OutputSlice struct {
+	outputDataSlice []map[string]interface{}
 }
 
 func main() {
@@ -33,9 +33,10 @@ func main() {
 		log.Fatalf("File reading error %v", err)
 	}
 
-	// Reading the output data in OutputMap{}
-	output := OutputMap{}
-	output.outputDataMap = make(map[string]interface{})
+	// Reading the output data in OutputSlice{}
+	output := OutputSlice{}
+	output.outputDataSlice = make([]map[string]interface{}, 0)
+	ansMap := make(map[string]interface{})
 
 	for key, inner := range input.inputDataMap {
 		mapKey, err := utils.ParseKey(key)
@@ -62,7 +63,7 @@ func main() {
 				}
 				newValue, err := utils.ParseString(value.(string))
 				if err == nil {
-					output.outputDataMap[mapKey] = newValue
+					ansMap[mapKey] = newValue
 				}
 			case "N":
 				if utils.CheckType(value) != "STRING" {
@@ -70,7 +71,7 @@ func main() {
 				}
 				newValue, err := utils.ParseNumber(value.(string))
 				if err == nil {
-					output.outputDataMap[mapKey] = newValue
+					ansMap[mapKey] = newValue
 				}
 
 			case "BOOL":
@@ -79,7 +80,7 @@ func main() {
 				}
 				newValue, err := utils.ParseBoolean(value.(string))
 				if err == nil {
-					output.outputDataMap[mapKey] = newValue
+					ansMap[mapKey] = newValue
 				}
 			case "NULL":
 				if utils.CheckType(value) != "STRING" {
@@ -87,7 +88,7 @@ func main() {
 				}
 				newValue, err := utils.ParseBoolean(value.(string))
 				if err == nil && newValue.(bool) {
-					output.outputDataMap[mapKey] = newValue
+					ansMap[mapKey] = newValue
 				}
 
 			case "L":
@@ -96,7 +97,7 @@ func main() {
 				}
 				newList, err := utils.ParseList(value.([]interface{}))
 				if err == nil && len(newList) != 0 {
-					output.outputDataMap[mapKey] = newList
+					ansMap[mapKey] = newList
 				}
 
 			case "M":
@@ -105,16 +106,18 @@ func main() {
 				}
 				newMap, err := utils.ParseMap(value.(map[string]interface{}))
 				if err == nil && len(newMap) != 0 {
-					output.outputDataMap[mapKey] = newMap
+					ansMap[mapKey] = newMap
 				}
 
 			}
 		}
 	}
 
+	//Inserting Json output in slice
+	output.outputDataSlice = append(output.outputDataSlice, ansMap)
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "    ")
-	if err := enc.Encode(output.outputDataMap); err != nil {
+	if err := enc.Encode(output.outputDataSlice); err != nil {
 		logger.ErrorLogger.Fatalln(err)
 	}
 
